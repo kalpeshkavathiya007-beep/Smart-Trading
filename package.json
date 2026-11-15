@@ -1,0 +1,10 @@
+{
+  "name": "alphatrade-ai",
+  "version": "1.0.0",
+  "description": "Smart Intraday Trading Dashboard with Angel One Live Feed",
+  "main": "mobile_server.js",
+  "scripts": {
+    "start": "node mobile_server.js"
+  },
+  "dependencies": {}
+}

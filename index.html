@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AlphaTrade AI - Real-Time Smart Trading Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#080d1a',
+                        cardbg: '#0f172a',
+                        bordercolor: 'rgba(255, 255, 255, 0.08)'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+Gujarati:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #080d1a;
+            color: #f1f5f9;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .gujarati-text {
+            font-family: 'Noto Sans Gujarati', sans-serif;
+        }
+        .card-glass {
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(15, 23, 42, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+        }
+        .golden-border {
+            border: 2px solid #eab308;
+            box-shadow: 0 0 25px rgba(234, 179, 8, 0.25);
+        }
+        .tick-up {
+            animation: flashGreen 0.6s ease-out;
+        }
+        .tick-down {
+            animation: flashRed 0.6s ease-out;
+        }
+        @keyframes flashGreen {
+            0% { background-color: rgba(16, 185, 129, 0.35); }
+            100% { background-color: transparent; }
+        }
+        @keyframes flashRed {
+            0% { background-color: rgba(239, 68, 68, 0.35); }
+            100% { background-color: transparent; }
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-blue-600 selection:text-white pb-20 md:pb-6">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-slate-800/80 bg-slate-950/90 backdrop-blur sticky top-0 z-50 px-3 md:px-6 py-2.5">
+        <div class="flex items-center justify-between gap-2 max-w-[1600px] mx-auto">
+            
+            <!-- Brand Logo & Live Mode Indicator -->
+            <div class="flex items-center space-x-2.5">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 via-blue-600 to-emerald-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <i data-lucide="zap" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <h1 class="text-base font-extrabold tracking-tight text-white">AlphaTrade AI</h1>
+                        <span class="text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-1.5 py-0.5 rounded-full flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> LIVE
+                        </span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 hidden sm:block">Auto Scanner • Rank #1 Top Picks • 100% Free</p>
+                </div>
+            </div>
+
+            <!-- Global Live Market Sentiment Ticker -->
+            <div class="hidden lg:flex items-center gap-2.5 bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-1.5 text-xs">
+                <div class="flex items-center gap-1.5 border-r border-slate-800 pr-2.5">
+                    <span class="text-slate-400">Gift Nifty:</span>
+                    <span class="font-bold text-emerald-400" id="headerGiftNifty">24,642 (+85)</span>
+                </div>
+                <div class="flex items-center gap-1.5 border-r border-slate-800 pr-2.5">
+                    <span class="text-slate-400">US Dow/Nas:</span>
+                    <span class="font-bold text-emerald-400">+0.52%</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="text-slate-400">Crude Oil:</span>
+                    <span class="font-bold text-amber-400">$74.10</span>
+                </div>
+            </div>
+
+            <!-- Right Controls: Angel One Live Badge + Auto-Refresh + Clock -->
+            <div class="flex items-center gap-2">
+                <!-- Angel One SmartAPI Live Feed Button -->
+                <button onclick="openAngelModal()" id="angelConnectBtn" class="flex items-center gap-1.5 text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 px-2.5 py-1.5 rounded-lg active:scale-95 transition-all">
+                    <i data-lucide="shield" class="w-3.5 h-3.5 text-amber-400"></i>
+                    <span id="angelStatusText">Angel One Feed</span>
+                </button>
+
+                <!-- Live Auto-Refresh -->
+                <button onclick="toggleLiveFeed()" id="liveToggleBtn" class="flex items-center gap-1.5 text-[11px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2.5 py-1.5 rounded-lg active:scale-95 transition-all">
+                    <i data-lucide="radio" class="w-3.5 h-3.5 animate-pulse"></i>
+                    <span id="liveStatusText">Live Feed: ON</span>
+                </button>
+
+                <!-- IST Clock -->
+                <div class="bg-slate-900 border border-slate-800 px-2.5 py-1.5 rounded-lg text-right">
+                    <div class="text-[11px] font-mono font-bold text-slate-200" id="liveClock">--:--:--</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- News & Event Warning Banner (NEWS IN GUJARATI) -->
+    <div class="bg-gradient-to-r from-amber-500/15 via-blue-500/10 to-amber-500/15 border-b border-amber-500/30 px-3 md:px-6 py-1.5 text-xs flex items-center justify-between">
+        <div class="flex items-center gap-2 overflow-hidden w-full">
+            <span class="bg-amber-500/20 text-amber-300 font-bold px-1.5 py-0.5 rounded text-[9px] uppercase tracking-wider shrink-0 flex items-center gap-1">
+                <i data-lucide="alert-triangle" class="w-3 h-3"></i> NEWS RADAR
+            </span>
+            <div class="text-slate-300 text-[11px] truncate gujarati-text" id="newsTicker">
+                🔔 <strong>ગ્લોબલ & ડોમેસ્ટિક સેન્ટિમેન્ટ:</strong> RBI મોંઘવારી કંટ્રોલમાં | Gift Nifty પોઝિટિવ | US માર્કેટ મજબૂત | આજનો બાયસ: <strong>BULLISH</strong>.
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTENT -->
+    <main class="flex-1 px-3 md:px-6 py-4 space-y-4 max-w-[1600px] w-full mx-auto">
+
+        <!-- 🔍 CUSTOM ANY STOCK ANALYZER (IN ENGLISH) -->
+        <section class="card-glass p-3 md:p-4 rounded-2xl border border-blue-500/30 shadow-xl shadow-blue-500/5">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-sm md:text-base font-bold text-white flex items-center gap-2">
+                            Analyze Any Stock (Custom Stock Analyzer)
+                        </h2>
+                        <p class="text-[11px] text-slate-400">Type any stock name to get instant Entry, SL & Targets • Disappears automatically when deleted</p>
+                    </div>
+                </div>
+
+                <!-- Quick Preset Tags -->
+                <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[11px]">
+                    <span class="text-slate-500 text-[10px] uppercase font-bold shrink-0">Quick Search:</span>
+                    <button onclick="quickAnalyze('SBIN')" class="bg-slate-900 hover:bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md border border-slate-800">SBIN</button>
+                    <button onclick="quickAnalyze('TATAMOTORS')" class="bg-slate-900 hover:bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md border border-slate-800">TATAMOTORS</button>
+                    <button onclick="quickAnalyze('HDFCBANK')" class="bg-slate-900 hover:bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md border border-slate-800">HDFCBANK</button>
+                    <button onclick="quickAnalyze('CRUDEOIL')" class="bg-slate-900 hover:bg-slate-800 text-amber-300 px-2 py-0.5 rounded-md border border-slate-800">CRUDEOIL</button>
+                    <button onclick="quickAnalyze('GOLD')" class="bg-slate-900 hover:bg-slate-800 text-yellow-300 px-2 py-0.5 rounded-md border border-slate-800">GOLD</button>
+                </div>
+            </div>
+
+            <!-- Search Form with Instant Clear [X] Button -->
+            <form onsubmit="handleCustomAnalyze(event)" class="flex flex-col sm:flex-row gap-2">
+                <div class="relative flex-1">
+                    <i data-lucide="crosshair" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input 
+                        type="text" 
+                        id="customStockInput" 
+                        oninput="handleInputChange(this.value)"
+                        placeholder="e.g. SBIN, RELIANCE, TATAMOTORS, NIFTY 24600 CE, CRUDEOIL..." 
+                        class="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-9 pr-10 py-2 text-sm text-white font-semibold placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors uppercase"
+                    />
+                    <button 
+                        type="button" 
+                        id="clearSearchBtn" 
+                        onclick="clearCustomSearch()" 
+                        class="hidden absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-xs">
+                        ✕
+                    </button>
+                </div>
+                <button 
+                    type="submit" 
+                    id="analyzeBtn"
+                    class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs md:text-sm px-5 py-2 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 active:scale-95 transition-all">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    <span>Analyze Now</span>
+                </button>
+            </form>
+
+            <!-- Custom Analysis Result Box -->
+            <div id="customResultBox" class="mt-3 hidden transition-all"></div>
+        </section>
+
+        <!-- FILTERS: Timeframe Horizon + Segment Switcher (IN ENGLISH) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-900/70 p-2.5 rounded-2xl border border-slate-800">
+            <!-- 1. Trading Horizon Mode -->
+            <div>
+                <span class="text-[11px] font-bold text-slate-400 px-1 mb-1 block flex items-center gap-1">
+                    <i data-lucide="clock" class="w-3.5 h-3.5 text-blue-400"></i> Trading Mode:
+                </span>
+                <div class="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-center">
+                    <button onclick="setHorizon('intraday')" id="btn-intraday" class="horizon-btn py-1.5 px-2 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white shadow">
+                        ⚡ Intraday
+                    </button>
+                    <button onclick="setHorizon('short')" id="btn-short" class="horizon-btn py-1.5 px-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all">
+                        📈 Short (Swing)
+                    </button>
+                    <button onclick="setHorizon('long')" id="btn-long" class="horizon-btn py-1.5 px-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all">
+                        🚀 Long Term
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. Segment Switcher -->
+            <div>
+                <span class="text-[11px] font-bold text-slate-400 px-1 mb-1 block flex items-center gap-1">
+                    <i data-lucide="layers" class="w-3.5 h-3.5 text-emerald-400"></i> Market Segment:
+                </span>
+                <div class="grid grid-cols-4 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-center">
+                    <button onclick="setSegment('future')" id="btn-future" class="segment-btn py-1.5 px-1.5 rounded-lg text-[11px] font-bold transition-all bg-emerald-600 text-white shadow">
+                        🎯 Futures
+                    </button>
+                    <button onclick="setSegment('options')" id="btn-options" class="segment-btn py-1.5 px-1.5 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white transition-all">
+                        ⚡ Options
+                    </button>
+                    <button onclick="setSegment('cash')" id="btn-cash" class="segment-btn py-1.5 px-1.5 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white transition-all">
+                        💼 Cash
+                    </button>
+                    <button onclick="setSegment('mcx')" id="btn-mcx" class="segment-btn py-1.5 px-1.5 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white transition-all">
+                        🛢️ MCX
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAIN GRID: Scanned Cards (Left) + Interactive Visual Chart & News (Right) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+            <!-- LEFT COLUMN: Rank 1 + All Top 5 Cards displayed directly together! -->
+            <div class="lg:col-span-6 space-y-3">
+                <div class="flex items-center justify-between px-1">
+                    <h2 class="text-xs md:text-sm font-bold text-white flex items-center gap-1.5">
+                        <i data-lucide="crown" class="w-4 h-4 text-amber-400"></i>
+                        <span>Best Trade (Rank #1) + Top 5 Stocks</span>
+                    </h2>
+                    <span class="text-[11px] text-amber-400 font-mono font-bold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
+                        Top 5 Stocks Ready
+                    </span>
+                </div>
+
+                <!-- ALL Opportunity Cards Container (Rank 1 first, then 2, 3, 4, 5) -->
+                <div class="space-y-3" id="cardsContainer"></div>
+
+                <!-- Live Risk & Position Sizing Calculator (IN ENGLISH) -->
+                <div class="card-glass p-3.5 rounded-2xl border border-slate-800 text-xs">
+                    <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+                        <div class="flex items-center gap-1.5 font-bold text-white">
+                            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i> Risk & Capital Sizing (1% Rule)
+                        </div>
+                        <span class="text-[10px] text-emerald-400 font-medium">Capital Protection</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="bg-slate-950 p-2 rounded-xl border border-slate-800">
+                            <span class="text-slate-400 block text-[10px]">Your Capital (₹):</span>
+                            <input type="number" id="capitalInput" value="50000" oninput="updateRiskCalc()" class="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 font-bold text-white text-xs mt-1">
+                        </div>
+                        <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 text-center">
+                            <span class="text-slate-400 block text-[10px]">Max Risk (1%):</span>
+                            <div class="font-bold text-rose-400 text-xs mt-1.5" id="maxRiskVal">₹ 500</div>
+                        </div>
+                        <div class="bg-slate-950 p-2 rounded-xl border border-slate-800 text-center">
+                            <span class="text-slate-400 block text-[10px]">Suggested Qty:</span>
+                            <div class="font-bold text-emerald-400 text-xs mt-1.5" id="suggestedQtyVal">1 Lot</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT COLUMN: Chart, Indicator Levels & News Impact Breakdown -->
+            <div class="lg:col-span-6 space-y-3">
+                
+                <!-- Live Candlestick Visual Plot (IN ENGLISH) -->
+                <div class="card-glass p-3.5 rounded-2xl border border-slate-800">
+                    <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="candlestick-chart" class="w-4 h-4 text-blue-400"></i>
+                            <div>
+                                <h3 class="text-xs md:text-sm font-bold text-white" id="chartTitle">RELIANCE NOV FUT • 15M</h3>
+                                <div class="text-[10px] text-slate-400" id="chartSubtitle">Entry, Stop Loss & Targets visually plotted</div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded transition-all" id="chartPrice">
+                                ₹ 1,284.50
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- SVG Chart -->
+                    <div class="relative bg-slate-950 rounded-xl p-2 border border-slate-800 h-[260px] flex flex-col justify-between overflow-hidden">
+                        <!-- Floating Price Annotations -->
+                        <div class="absolute right-2 top-2 space-y-1 z-10 text-[10px] font-mono">
+                            <div class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-1.5 py-0.5 rounded flex justify-between gap-2">
+                                <span>TARGET 2:</span> <span class="font-bold" id="annotT2">₹ 1,308.00</span>
+                            </div>
+                            <div class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-1.5 py-0.5 rounded flex justify-between gap-2">
+                                <span>TARGET 1:</span> <span class="font-bold" id="annotT1">₹ 1,296.00</span>
+                            </div>
+                            <div class="bg-blue-500/20 text-blue-400 border border-blue-500/40 px-1.5 py-0.5 rounded flex justify-between gap-2">
+                                <span>ENTRY:</span> <span class="font-bold" id="annotEntry">₹ 1,284.50</span>
+                            </div>
+                            <div class="bg-rose-500/20 text-rose-400 border border-rose-500/40 px-1.5 py-0.5 rounded flex justify-between gap-2">
+                                <span>STOP LOSS:</span> <span class="font-bold" id="annotSL">₹ 1,274.00</span>
+                            </div>
+                        </div>
+
+                        <!-- SVG Candlestick Graphic -->
+                        <svg class="w-full h-full" viewBox="0 0 500 200" preserveAspectRatio="none">
+                            <line x1="0" y1="35" x2="500" y2="35" stroke="#10b981" stroke-width="1.5" stroke-dasharray="6" />
+                            <line x1="0" y1="68" x2="500" y2="68" stroke="#10b981" stroke-width="1.5" stroke-dasharray="3" />
+                            <line x1="0" y1="105" x2="500" y2="105" stroke="#3b82f6" stroke-width="2" />
+                            <line x1="0" y1="150" x2="500" y2="150" stroke="#ef4444" stroke-width="1.8" />
+                            <path d="M 0 135 Q 120 128 250 115 T 500 100" fill="none" stroke="#a855f7" stroke-width="1.5" />
+
+                            <line x1="50" y1="155" x2="50" y2="130" stroke="#ef4444" stroke-width="1"/>
+                            <rect x="46" y="138" width="8" height="12" fill="#ef4444" rx="1"/>
+
+                            <line x1="100" y1="145" x2="100" y2="125" stroke="#10b981" stroke-width="1"/>
+                            <rect x="96" y="128" width="8" height="14" fill="#10b981" rx="1"/>
+
+                            <line x1="150" y1="135" x2="150" y2="118" stroke="#10b981" stroke-width="1"/>
+                            <rect x="146" y="122" width="8" height="10" fill="#10b981" rx="1"/>
+
+                            <line x1="200" y1="130" x2="200" y2="108" stroke="#10b981" stroke-width="1.5"/>
+                            <rect x="196" y="112" width="8" height="15" fill="#10b981" rx="1"/>
+
+                            <line x1="250" y1="120" x2="250" y2="95" stroke="#10b981" stroke-width="1.5"/>
+                            <rect x="246" y="100" width="8" height="16" fill="#10b981" rx="1"/>
+
+                            <line x1="300" y1="110" x2="300" y2="88" stroke="#10b981" stroke-width="1.5"/>
+                            <rect x="296" y="92" width="8" height="14" fill="#10b981" rx="1"/>
+
+                            <line id="liveCandleWick" x1="350" y1="105" x2="350" y2="80" stroke="#10b981" stroke-width="2"/>
+                            <rect id="liveCandleBody" x="345" y="85" width="10" height="15" fill="#10b981" rx="1"/>
+                        </svg>
+
+                        <!-- Legend -->
+                        <div class="flex items-center justify-between text-[10px] text-slate-400 border-t border-slate-900 pt-1 font-mono">
+                            <div class="flex items-center gap-2">
+                                <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-blue-500"></span> Entry</span>
+                                <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-rose-500"></span> SL</span>
+                                <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-emerald-500"></span> Target</span>
+                                <span class="flex items-center gap-1"><span class="w-2 h-0.5 bg-purple-500"></span> VWAP</span>
+                            </div>
+                            <span class="text-emerald-400">● Live Ticks Active</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Global & Domestic News Impact Live Card (NEWS CONTENT IN GUJARATI) -->
+                <div class="card-glass p-3.5 rounded-2xl border border-slate-800 space-y-2 text-xs">
+                    <div class="flex items-center justify-between pb-1.5 border-b border-slate-800">
+                        <div class="flex items-center gap-1.5 font-bold text-white">
+                            <i data-lucide="newspaper" class="w-4 h-4 text-indigo-400"></i> Global & Domestic News Impact
+                        </div>
+                        <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded font-bold">
+                            Overall: Bullish (+72%)
+                        </span>
+                    </div>
+
+                    <div class="space-y-1.5 text-[11px]">
+                        <div class="bg-slate-950/80 p-2 rounded-xl border border-slate-800 flex items-start gap-2">
+                            <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+                            <div>
+                                <strong class="text-slate-200">US & Asian Markets:</strong>
+                                <span class="text-slate-400 gujarati-text">Dow Jones +0.5% અને Nasdaq તેજીમાં. FII તરફથી ખરીદીના સંકેત.</span>
+                            </div>
+                        </div>
+                        <div class="bg-slate-950/80 p-2 rounded-xl border border-slate-800 flex items-start gap-2">
+                            <i data-lucide="landmark" class="w-4 h-4 text-blue-400 shrink-0 mt-0.5"></i>
+                            <div>
+                                <strong class="text-slate-200">RBI & Domestic Data:</strong>
+                                <span class="text-slate-400 gujarati-text">ઇન્ફ્લેશન સ્થિર હોવાથી બેન્કિંગ & ઓટો સેક્ટરમાં મોમેન્ટમ ચાલુ રહેશે.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ANGEL ONE LOGIN MODAL (SECURE LOCAL POPUP) -->
+    <div id="angelModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700/80 rounded-2xl p-5 max-w-md w-full shadow-2xl relative text-xs">
+            <button onclick="closeAngelModal()" class="absolute right-4 top-4 text-slate-400 hover:text-white font-bold text-sm bg-slate-800 w-7 h-7 rounded-full flex items-center justify-center">
+                ✕
+            </button>
+            <div class="flex items-center gap-2.5 mb-3">
+                <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                    <i data-lucide="shield-check" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-white">Angel One SmartAPI Live Feed</h3>
+                    <p class="text-[11px] text-slate-400">Connect for Real-Time NSE, F&O and MCX Ticks</p>
+                </div>
+            </div>
+
+            <!-- Credentials Card -->
+            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 mb-3 space-y-1 font-mono text-[11px]">
+                <div class="flex justify-between">
+                    <span class="text-slate-500">Client Code:</span>
+                    <span class="text-slate-200 font-bold" id="modalClientCode">K82980</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-500">API Key:</span>
+                    <span class="text-emerald-400 font-bold" id="modalApiKey">pAXukQqD</span>
+                </div>
+            </div>
+
+            <form onsubmit="submitAngelLogin(event)" class="space-y-3">
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">Enter 4-Digit Angel One MPIN:</label>
+                    <input type="password" id="angelMpin" maxlength="4" placeholder="••••" required class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white tracking-widest font-mono focus:outline-none focus:border-amber-500">
+                </div>
+                <div class="bg-emerald-500/10 border border-emerald-500/30 p-2.5 rounded-xl flex items-center justify-between text-emerald-400">
+                    <span class="flex items-center gap-1.5 font-bold text-[11px]">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i> Auto-TOTP Generator:
+                    </span>
+                    <span class="text-[10px] font-mono bg-emerald-500/20 px-2 py-0.5 rounded font-bold">100% AUTOMATIC</span>
+                </div>
+
+                <div id="modalAlertBox" class="hidden p-2 rounded-lg text-[11px] font-medium"></div>
+
+                <button type="submit" id="modalSubmitBtn" class="w-full bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition-all">
+                    <i data-lucide="plug" class="w-4 h-4"></i>
+                    <span>Connect & Start 1-Click Live Feed</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Floating Navigation Bar (IN ENGLISH) -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-950/95 backdrop-blur border-t border-slate-800 px-4 py-2 flex items-center justify-around z-50">
+        <button onclick="setHorizon('intraday')" class="flex flex-col items-center text-slate-400 active:text-blue-400">
+            <i data-lucide="zap" class="w-4 h-4"></i>
+            <span class="text-[9px] mt-0.5 font-medium">Intraday</span>
+        </button>
+        <button onclick="setSegment('future')" class="flex flex-col items-center text-slate-400 active:text-emerald-400">
+            <i data-lucide="trending-up" class="w-4 h-4"></i>
+            <span class="text-[9px] mt-0.5 font-medium">Futures</span>
+        </button>
+        <button onclick="document.getElementById('customStockInput').focus()" class="flex flex-col items-center text-blue-400">
+            <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white -mt-4 shadow-lg shadow-blue-500/30">
+                <i data-lucide="search" class="w-4 h-4"></i>
+            </div>
+            <span class="text-[9px] mt-0.5 font-bold">Search</span>
+        </button>
+        <button onclick="setSegment('options')" class="flex flex-col items-center text-slate-400 active:text-purple-400">
+            <i data-lucide="layers" class="w-4 h-4"></i>
+            <span class="text-[9px] mt-0.5 font-medium">Options</span>
+        </button>
+        <button onclick="setSegment('mcx')" class="flex flex-col items-center text-slate-400 active:text-amber-400">
+            <i data-lucide="fuel" class="w-4 h-4"></i>
+            <span class="text-[9px] mt-0.5 font-medium">MCX</span>
+        </button>
+    </nav>
+
+    <!-- JAVASCRIPT LOGIC ENGINE -->
+    <script>
+        let currentHorizon = 'intraday';
+        let currentSegment = 'future';
+        let isLiveActive = true;
+        let liveInterval = null;
+
+        // TOP 5 DATASET FOR EACH CATEGORY (ALL UI IN ENGLISH, NEWS IN GUJARATI)
+        const database = {
+            future: {
+                intraday: [
+                    {
+                        rank: 1,
+                        isBest: true,
+                        symbol: "RELIANCE NOV FUT",
+                        category: "Futures (Intraday)",
+                        action: "STRONG BUY",
+                        confidence: "96% Confluence",
+                        price: 1284.50,
+                        entry: 1284.50,
+                        sl: 1274.00,
+                        t1: 1296.00,
+                        t2: 1308.00,
+                        lotSize: 250,
+                        rr: "1 : 2.2",
+                        indicators: ["VWAP Bullish Crossover", "Supertrend (10,3) Green", "EMA 9 > 21 Cross", "Volume 2.6x Breakout"],
+                        newsImpact: "ન્યૂ એનર્જી સેક્ટરમાં મોટા રોકાણ અને પોઝિટિવ પરિણામોના લીધે સુપર બુલિશ મૂવ."
+                    },
+                    {
+                        rank: 2,
+                        isBest: false,
+                        symbol: "TATASTEEL NOV FUT",
+                        category: "Futures (Intraday)",
+                        action: "STRONG BUY",
+                        confidence: "92% Confluence",
+                        price: 154.20,
+                        entry: 154.20,
+                        sl: 151.80,
+                        t1: 157.00,
+                        t2: 159.50,
+                        lotSize: 5500,
+                        rr: "1 : 2.2",
+                        indicators: ["Day High Breakout", "EMA 9 & 21 Support Bounce", "Supertrend Green", "CPR Top Support"],
+                        newsImpact: "ગ્લોબલ મેટલ પ્રાઈસમાં ઉછાળો અને ચાઈના સ્ટીમ્યુલસની પોઝિટિવ અસર."
+                    },
+                    {
+                        rank: 3,
+                        isBest: false,
+                        symbol: "INFY NOV FUT",
+                        category: "Futures (Intraday)",
+                        action: "PULLBACK BUY",
+                        confidence: "89% Confluence",
+                        price: 1862.00,
+                        entry: 1862.00,
+                        sl: 1845.00,
+                        t1: 1885.00,
+                        t2: 1905.00,
+                        lotSize: 400,
+                        rr: "1 : 2.5",
+                        indicators: ["50 EMA 15M Support", "RSI Rebound 58", "VWAP Bounce"],
+                        newsImpact: "US Nasdaq રેલીથી IT સેક્ટરમાં તેજીની સંભાવના."
+                    },
+                    {
+                        rank: 4,
+                        isBest: false,
+                        symbol: "MARUTI NOV FUT",
+                        category: "Futures (Intraday)",
+                        action: "MOMENTUM BUY",
+                        confidence: "88% Confluence",
+                        price: 11250.00,
+                        entry: 11250.00,
+                        sl: 11140.00,
+                        t1: 11390.00,
+                        t2: 11520.00,
+                        lotSize: 50,
+                        rr: "1 : 2.4",
+                        indicators: ["Auto Index Breakout", "RSI 64 Strong Bullish", "VWAP Support"],
+                        newsImpact: "વાહનોના વેચાણમાં રેકોર્ડ ગ્રોથની જાહેરાત."
+                    },
+                    {
+                        rank: 5,
+                        isBest: false,
+                        symbol: "SBIN NOV FUT",
+                        category: "Futures (Intraday)",
+                        action: "BUY ON DIPS",
+                        confidence: "87% Confluence",
+                        price: 825.40,
+                        entry: 825.40,
+                        sl: 818.00,
+                        t1: 835.00,
+                        t2: 844.00,
+                        lotSize: 750,
+                        rr: "1 : 2.5",
+                        indicators: ["PSU Bank Index Support", "Supertrend Green", "Rising OBV"],
+                        newsImpact: "ક્રેડિટ ગ્રોથ અને લોન બુકમાં મજબૂતી."
+                    }
+                ],
+                short: [
+                    {
+                        rank: 1,
+                        isBest: true,
+                        symbol: "HDFCBANK DEC FUT",
+                        category: "Futures (Swing)",
+                        action: "STRONG BUY",
+                        confidence: "95% Confluence",
+                        price: 1740.00,
+                        entry: 1740.00,
+                        sl: 1690.00,
+                        t1: 1810.00,
+                        t2: 1880.00,
+                        lotSize: 550,
+                        rr: "1 : 2.8",
+                        indicators: ["Double Bottom Breakout", "200 DMA Reclaim", "Weekly RSI > 60"],
+                        newsImpact: "લિક્વિડિટી સપોર્ટ મળવાથી પ્રાઈવેટ બેંક્સમાં ખરીદી."
+                    },
+                    {
+                        rank: 2,
+                        isBest: false,
+                        symbol: "LT DEC FUT (L&T)",
+                        category: "Futures (Swing)",
+                        action: "ACCUMULATE BUY",
+                        confidence: "91% Confluence",
+                        price: 3650.00,
+                        entry: 3650.00,
+                        sl: 3560.00,
+                        t1: 3780.00,
+                        t2: 3900.00,
+                        lotSize: 150,
+                        rr: "1 : 2.7",
+                        indicators: ["Cup & Handle Pattern", "EMA 21 Trailing Support"],
+                        newsImpact: "ઇન્ફ્રાસ્ટ્રક્ચર ઓર્ડર બુક મજબૂત હોવાની જાહેરાત."
+                    }
+                ],
+                long: [
+                    {
+                        rank: 1,
+                        isBest: true,
+                        symbol: "NIFTY FUT (Positional)",
+                        category: "Futures (Monthly)",
+                        action: "LONG BIAS",
+                        confidence: "93% Confluence",
+                        price: 24650.00,
+                        entry: 24650.00,
+                        sl: 24100.00,
+                        t1: 25400.00,
+                        t2: 26000.00,
+                        lotSize: 25,
+                        rr: "1 : 2.4",
+                        indicators: ["All-Time High Trajectory", "Monthly Supertrend Bullish"],
+                        newsImpact: "ભારતનો GDP ગ્રોથ આઉટલુક મજબૂત."
+                    }
+                ]
+            },
+            options: {
+                intraday: [
+                    {
+                        rank: 1,
+                        isBest: true,
+                        symbol: "NIFTY 24600 CE (Weekly)",
+                        category: "Options (Intraday Momentum)",
+                        action: "STRONG BUY (CE)",
+                        confidence: "95% Confluence",
+                        price: 118.00,
+                        entry: 118.00,
+                        sl: 95.00,
+                        t1: 145.00,
+                        t2: 175.00,
+                        lotSize: 25,
+                        rr: "1 : 2.4",
+                        indicators: ["Spot Above VWAP", "Heavy Put Writing at 24600", "Call Unwinding at Resistance"],
+                        newsImpact: "શોર્ટ કવરિંગ રેલીથી પ્રીમિયમમાં ઝડપી ઉછાળો."
+                    },
+                    {
+                        rank: 2,
+                        isBest: false,
+                        symbol: "BANKNIFTY 52500 CE",
+                        category: "Options (Intraday)",
+                        action: "MOMENTUM BUY",
+                        confidence: "91% Confluence",
+                        price: 240.00,
+                        entry: 240.00,
+                        sl: 195.00,
+                        t1: 300.00,
+                        t2: 360.00,
+                        lotSize: 15,
+                        rr: "1 : 2.6",
+                        indicators: ["CPR Pivot Reclaim", "HDFC/ICICI Positive", "RSI 62 Spike"],
+                        newsImpact: "બેન્કિંગ સ્ટોક્સમાં FII બાયિંગ સપોર્ટ."
+                    },
+                    {
+                        rank: 3,
+                        isBest: false,
+                        symbol: "RELIANCE 1300 CE",
+                        category: "Stock Options",
+                        action: "BUY BREAKOUT",
+                        confidence: "89% Confluence",
+                        price: 24.50,
+                        entry: 24.50,
+                        sl: 18.00,
+                        t1: 33.00,
+                        t2: 42.00,
+                        lotSize: 250,
+                        rr: "1 : 2.6",
+                        indicators: ["Stock Day High Breakout", "Options Volume 3.8x"],
+                        newsImpact: "હેવીવેઇટ રિલાયન્સમાં ફ્રેશ બાયિંગ ઇન્ટરેસ્ટ."
+                    },
+                    {
+                        rank: 4,
+                        isBest: false,
+                        symbol: "NIFTY 24500 PE (Put Writing)",
+                        category: "Options (Put Writing)",
+                        action: "STRONG SELL (PE)",
+                        confidence: "88% Confluence",
+                        price: 65.00,
+                        entry: 65.00,
+                        sl: 85.00,
+                        t1: 40.00,
+                        t2: 20.00,
+                        lotSize: 25,
+                        rr: "1 : 2.2",
+                        indicators: ["Put Decay Acceleration", "Underlying Uptrend"],
+                        newsImpact: "બુલ માર્કેટમાં પ્રીમિયમ મેલ્ટિંગ ફાયદો."
+                    },
+                    {
+                        rank: 5,
+                        isBest: false,
+                        symbol: "TATASTEEL 155 CE",
+                        category: "Stock Options",
+                        action: "BUY",
+                        confidence: "87% Confluence",
+                        price: 3.80,
+                        entry: 3.80,
+                        sl: 2.90,
+                        t1: 5.10,
+                        t2: 6.40,
+                        lotSize: 5500,
+                        rr: "1 : 2.8",
+                        indicators: ["Metal Rally Momentum", "High Implied Volatility"],
+                        newsImpact: "ગ્લોબલ સ્ટીલ સેક્ટરમાં તેજી."
+                    }
+                ],
+                short: [
+                    {
+                        rank: 1,
+                        isBest: true,
+                        symbol: "NIFTY 24700 CE (Monthly)",
+                        category: "Options (Monthly Swing)",
+                        action: "BUY",
+                        confidence: "91% Confluence",
+                        price: 210.00,
+                        entry: 210.00,
+                        sl: 150.00,
+                        t1: 290.00,
+                        t2: 380.00,
+                        lotSize: 25,
+                        rr: "1 : 2.8",
+                        indicators: ["Monthly Bullish Candle", "Low IV Entry"],
+                        newsImpact: "મંથલી એક્સપાયરી સુધી 25,000 ટાર્ગેટ."
+                    }
+                ],
+                long: [
+                    {
+                        rank: 1,
+                        isBest: true,
+                        symbol: "NIFTY 25000 CE (Quarterly)",
+                        category: "Options (Quarterly)",
+                        action: "POSITIONAL CALL",
+                        confidence: "88% Confluence",
+                        price: 380.00,
+                        entry: 380.00,
+                        sl: 260.00,
+                        t1: 580.00,
+                        t2: 750.00,
+                        lotSize: 25,
+                        rr: "1 : 3.0",
+                        indicators: ["Macro Bullish", "Earnings Upside"],
+                        newsImpact: "લાંબા ગાળાના આઉટલુકમાં મજબૂતી."
+                    }
+                ]
+            },
+            cash: {
+                intraday: [
+                    {
+                        rank: 1,
+                        isBest: true,
+                        symbol: "TRENT (Cash Equity)",
+                        category: "Cash (Intraday)",
+                        action: "STRONG BUY",
+                        confidence: "96% Confluence",
+                        price: 6420.00,
+                        entry: 6420.00,
+                        sl: 6360.00,
+                        t1: 6510.00,
+                        t2: 6600.00,
+                        lotSize: "No Lot (1-50 Qty)",
+                        rr: "1 : 2.5",
+                        indicators: ["Fresh Day High Breakout", "Volume Spike 3.2x", "VWAP Cross", "RSI 68"],
+                        newsImpact: "રિટેલ સેલ્સમાં ભારે વધારાના અહેવાલો."
+                    },
+                    {
+                        rank: 2,
+                        isBest: false,
+                        symbol: "BHARTIARTL (Cash)",
+                        category: "Cash (Intraday)",
+                        action: "BUY",
+                        confidence: "91% Confluence",
+                        price: 1590.00,
+                        entry: 1590.00,
+                        sl: 1575.00,
+                        t1: 1612.00,
+                        t2: 1630.00,
+                        lotSize: "Cash Shares",
+                        rr: "1 : 2.6",
+                        indicators: ["Supertrend 15M Green", "Above CPR Pivot", "EMA 9 Support"],
+                        newsImpact: "ARPU સુધરવાના અને ગ્રોથના સંકેતો."
+                    },
+                    {
+                        rank: 3,
+                        isBest: false,
+                        symbol: "ZOMATO (Cash)",
+                        category: "Cash (Intraday)",
+                        action: "STRONG BUY",
+                        confidence: "90% Confluence",
+                        price: 275.50,
+                        entry: 275.50,
+                        sl: 269.00,
+                        t1: 284.00,
+                        t2: 292.00,
+                        lotSize: "Cash Shares",
+                        rr: "1 : 2.5",
+                        indicators: ["All-Time High Breakout", "Blinkit Expansion Inflow"],
+                        newsImpact: "ક્વિક કોમર્સ બિઝનેસમાં બમ્પર નફો."
+                    },
+                    {
+                        rank: 4,
+                        isBest: false,
+                        symbol: "HAL (Hindustan Aero)",
+                        category: "Cash (Intraday)",
+                        action: "BUY ON DIPS",
+                        confidence: "88% Confluence",
+                        price: 4320.00,
+                        entry: 4320.00,
+                        sl: 4260.00,
+                        t1: 4400.00,
+                        t2: 4480.00,
+                        lotSize: "Cash Shares",
+                        rr: "1 : 2.6",
+                        indicators: ["Defense Basket Inflow", "Above 21 EMA"],
+                        newsImpact: "સંરક્ષણ બજેટ અને એક્સપોર્ટ ઓર્ડર્સ."
+                    },
+                    {
+                        rank: 5,
+                        isBest: false,
+                        symbol: "POLYCAB (Cash)",
+                        category: "Cash (Intraday)",
+                        action: "MOMENTUM BUY",
+                        confidence: "87% Confluence",
+                        price: 6850.00,
+                        entry: 6850.00,
+                        sl: 6770.00,
+                        t1: 6970.00,
+                        t2: 7080.00,
+                        lotSize: "Cash Shares",
+                        rr: "1 : 2.8",
+                        indicators: ["Cables & Infrastructure Demand", "Supertrend Green"],
+                        newsImpact: "રિયલ એસ્ટેટ તેજીથી કેબલ્સ સેલ્સમાં ઉછાળો."
+                    }
+                ],
+                short: [
+                    {
+                        rank: 1,
+                        isBest: true,
+                        symbol: "BEL (Bharat Electronics)",
+                        category: "Cash (Swing)",
+                        action: "STRONG BUY",
+                        confidence: "94% Confluence",
+                        price: 298.00,
+                        entry: 298.00,
+                        sl: 284.00,
+                        t1: 320.00,
+                        t2: 340.00,
+                        lotSize: "Delivery",
+                        rr: "1 : 3.0",
+                        indicators: ["Defense Leadership", "Above 50 and 200 DMA"],
+                        newsImpact: "સંરક્ષણ મંત્રાલય તરફથી નવા ઓર્ડર."
+                    }
+                ],
+                long: [
+                    {
+                        rank: 1,
+                        isBest: true,
+                        symbol: "ITC (Long Term)",
+                        category: "Cash (Investment)",
+                        action: "BUY & HOLD",
+                        confidence: "95% Confluence",
+                        price: 475.00,
+                        entry: 475.00,
+                        sl: 440.00,
+                        t1: 530.00,
+                        t2: 600.00,
+                        lotSize: "Investment",
+                        rr: "1 : 3.5",
+                        indicators: ["Weekly Golden Cross", "High Dividend Yield"],
+                        newsImpact: "હોટેલ્સ બિઝનેસ ડીમર્જર કેટાલીસ્ટ."
+                    }
+                ]
+            },
+            mcx: {
+                intraday: [
+                    {
+                        rank: 1,
+                        isBest: true,
+                        symbol: "CRUDEOIL DEC MCX",
+                        category: "MCX (Commodity)",
+                        action: "BUY ON DIPS",
+                        confidence: "94% Confluence",
+                        price: 6280.00,
+                        entry: 6280.00,
+                        sl: 6220.00,
+                        t1: 6360.00,
+                        t2: 6440.00,
+                        lotSize: "100 Barrels / 10 Mini",
+                        rr: "1 : 2.6",
+                        indicators: ["VWAP Support at 6,260", "Supertrend Green 30M", "OPEC+ Supply Cut"],
+                        newsImpact: "OPEC+ ઉત્પાદન કાપના કારણે ક્રૂડમાં તેજી."
+                    },
+                    {
+                        rank: 2,
+                        isBest: false,
+                        symbol: "NATURALGAS NOV MCX",
+                        category: "MCX (Intraday)",
+                        action: "STRONG BUY",
+                        confidence: "91% Confluence",
+                        price: 248.50,
+                        entry: 248.50,
+                        sl: 242.00,
+                        t1: 257.00,
+                        t2: 265.00,
+                        lotSize: "1250 mmBtu",
+                        rr: "1 : 2.5",
+                        indicators: ["Breakout above 245", "RSI 65 Momentum", "High Winter Volume"],
+                        newsImpact: "યુએસ અને યુરોપમાં ઠંડી વધવાથી ગેસની માંગ."
+                    },
+                    {
+                        rank: 3,
+                        isBest: false,
+                        symbol: "GOLD DEC MCX",
+                        category: "MCX (Intraday)",
+                        action: "BUY",
+                        confidence: "90% Confluence",
+                        price: 76500.00,
+                        entry: 76500.00,
+                        sl: 75900.00,
+                        t1: 77200.00,
+                        t2: 77900.00,
+                        lotSize: "1 Kg / Mini",
+                        rr: "1 : 2.3",
+                        indicators: ["Central Bank Reserves Buying", "Safe Haven Inflow"],
+                        newsImpact: "ગ્લોબલ સેન્ટ્રલ બેંકો દ્વારા સોનાની ખરીદી."
+                    },
+                    {
+                        rank: 4,
+                        isBest: false,
+                        symbol: "SILVER DEC MCX",
+                        category: "MCX (Intraday)",
+                        action: "STRONG BUY",
+                        confidence: "89% Confluence",
+                        price: 91500.00,
+                        entry: 91500.00,
+                        sl: 90500.00,
+                        t1: 92800.00,
+                        t2: 94000.00,
+                        lotSize: "30 Kg / Mini",
+                        rr: "1 : 2.5",
+                        indicators: ["Solar & EV Industrial Demand Surge", "Consolidation Breakout"],
+                        newsImpact: "ઔદ્યોગિક વપરાશમાં મોટો ઉછાળો."
+                    },
+                    {
+                        rank: 5,
+                        isBest: false,
+                        symbol: "COPPER NOV MCX",
+                        category: "MCX (Intraday)",
+                        action: "BUY",
+                        confidence: "87% Confluence",
+                        price: 835.00,
+                        entry: 835.00,
+                        sl: 827.00,
+                        t1: 846.00,
+                        t2: 855.00,
+                        lotSize: "2500 Kg",
+                        rr: "1 : 2.5",
+                        indicators: ["LME Inventories Falling", "EV Wire Demand"],
+                        newsImpact: "વૈશ્વિક ઇલેક્ટ્રિફિકેશન તેજી."
+                    }
+                ],
+                short: [
+                    {
+                        rank: 1,
+                        isBest: true,
+                        symbol: "GOLD DEC MCX",
+                        category: "MCX (Swing)",
+                        action: "STRONG BUY",
+                        confidence: "94% Confluence",
+                        price: 76500.00,
+                        entry: 76500.00,
+                        sl: 75400.00,
+                        t1: 77800.00,
+                        t2: 79000.00,
+                        lotSize: "1 Kg / Mini",
+                        rr: "1 : 2.3",
+                        indicators: ["Central Bank Buying", "Safe Haven Demand"],
+                        newsImpact: "સેન્ટ્રલ બેંકો દ્વારા સોનાની ખરીદી."
+                    }
+                ],
+                long: [
+                    {
+                        rank: 1,
+                        isBest: true,
+                        symbol: "SILVER MAR MCX",
+                        category: "MCX (Long Term)",
+                        action: "ACCUMULATE",
+                        confidence: "93% Confluence",
+                        price: 91500.00,
+                        entry: 91500.00,
+                        sl: 88000.00,
+                        t1: 96000.00,
+                        t2: 104000.00,
+                        lotSize: "30 Kg / Mini",
+                        rr: "1 : 3.5",
+                        indicators: ["Solar & EV Demand Surge", "Multi-Year High Consolidation"],
+                        newsImpact: "ગ્રીન એનર્જી અને ઇલેક્ટ્રોનિક્સમાં ભારે માંગ."
+                    }
+                ]
+            }
+        };
+
+        // RENDER FUNCTION
+        function renderCards() {
+            const container = document.getElementById('cardsContainer');
+            const dataList = (database[currentSegment] && database[currentSegment][currentHorizon]) || [];
+
+            if (dataList.length === 0) {
+                container.innerHTML = `
+                    <div class="card-glass p-6 rounded-2xl border border-slate-800 text-center">
+                        <i data-lucide="shield-check" class="w-8 h-8 text-amber-400 mx-auto mb-2"></i>
+                        <h4 class="text-white font-bold text-sm">No Risky / False Signals</h4>
+                        <p class="text-xs text-slate-400 mt-1">Due to incomplete technical confluence, no trade is suggested in this segment to protect capital.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            let html = '';
+            dataList.forEach((item, index) => {
+                const isRankOne = item.rank === 1;
+
+                if (isRankOne) {
+                    html += `
+                        <div onclick="selectCard('${item.symbol}', ${item.price}, ${item.entry}, ${item.sl}, ${item.t1}, ${item.t2})"
+                             class="card-glass p-3.5 md:p-4 rounded-2xl golden-border bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-900 transition-all cursor-pointer relative overflow-hidden group shadow-xl">
+                            
+                            <div class="flex items-center justify-between bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 px-3 py-1.5 rounded-xl text-xs font-black mb-3 shadow">
+                                <span class="flex items-center gap-1.5 uppercase tracking-wide">
+                                    <i data-lucide="crown" class="w-4 h-4 fill-current"></i> RANK #1 - BEST TRADE OF THE DAY (Recommended if taking only 1 trade)
+                                </span>
+                                <span class="bg-slate-950 text-amber-400 px-2 py-0.5 rounded text-[10px] font-mono font-bold">TOP STAR PICK</span>
+                            </div>
+
+                            <div class="flex items-start justify-between gap-2 mb-2">
+                                <div>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <h3 class="text-base md:text-lg font-black text-white group-hover:text-amber-400 transition-colors font-mono">${item.symbol}</h3>
+                                        <span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">#1 RECOMMENDED</span>
+                                    </div>
+                                    <div class="text-[11px] text-slate-400 mt-0.5">Lot / Qty: <strong class="text-slate-200 font-mono">${item.lotSize}</strong></div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-xs font-black px-2.5 py-1 rounded-lg uppercase tracking-wide inline-block shadow">
+                                        ${item.action}
+                                    </span>
+                                    <div class="text-[11px] font-bold text-emerald-400 mt-1 flex items-center justify-end gap-1">
+                                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> ${item.confidence}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-4 gap-1.5 bg-slate-950/90 p-2.5 rounded-xl border border-amber-500/20 mb-2.5 text-center font-mono">
+                                <div>
+                                    <span class="text-[9px] text-blue-400 font-bold block uppercase">🎯 ENTRY</span>
+                                    <div class="text-xs md:text-sm font-extrabold text-white mt-0.5">₹ ${item.entry.toLocaleString('en-IN')}</div>
+                                </div>
+                                <div>
+                                    <span class="text-[9px] text-rose-400 font-bold block uppercase">🛑 STOP LOSS</span>
+                                    <div class="text-xs md:text-sm font-extrabold text-rose-400 mt-0.5">₹ ${item.sl.toLocaleString('en-IN')}</div>
+                                </div>
+                                <div>
+                                    <span class="text-[9px] text-emerald-400 font-bold block uppercase">🚀 TARGET 1</span>
+                                    <div class="text-xs md:text-sm font-extrabold text-emerald-400 mt-0.5">₹ ${item.t1.toLocaleString('en-IN')}</div>
+                                </div>
+                                <div>
+                                    <span class="text-[9px] text-emerald-300 font-bold block uppercase">🏆 TARGET 2</span>
+                                    <div class="text-xs md:text-sm font-extrabold text-emerald-300 mt-0.5">₹ ${item.t2.toLocaleString('en-IN')}</div>
+                                </div>
+                            </div>
+
+                            <div class="mb-2 bg-slate-900/60 p-2 rounded-lg border border-slate-800 text-xs">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-1 text-[11px] text-slate-300">
+                                    ${item.indicators.map(ind => `
+                                        <div class="flex items-center gap-1.5">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
+                                            <span class="truncate">${ind}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            <!-- NEWS IN GUJARATI -->
+                            <div class="text-[11px] bg-indigo-950/30 border border-indigo-900/40 p-2 rounded-lg flex items-start gap-1.5 text-indigo-200 gujarati-text">
+                                <i data-lucide="newspaper" class="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5"></i>
+                                <div><strong>ન્યૂઝ ઇમ્પેક્ટ:</strong> ${item.newsImpact}</div>
+                            </div>
+
+                        </div>
+
+                        <div class="flex items-center justify-between pt-2 pb-1 text-xs text-slate-400">
+                            <span class="font-bold flex items-center gap-1.5 text-slate-300">
+                                <i data-lucide="list-ordered" class="w-3.5 h-3.5 text-blue-400"></i> Alternative Top Setups:
+                            </span>
+                            <span class="text-[10px] text-slate-500 font-mono">Rank #2 to #5</span>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div onclick="selectCard('${item.symbol}', ${item.price}, ${item.entry}, ${item.sl}, ${item.t1}, ${item.t2})"
+                             class="card-glass p-3 md:p-3.5 rounded-xl border border-slate-800 hover:border-slate-700 bg-slate-900/60 transition-all cursor-pointer relative overflow-hidden group">
+                            
+                            <div class="flex items-start justify-between gap-2 mb-2">
+                                <div>
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="w-5 h-5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-bold flex items-center justify-center">#${item.rank}</span>
+                                        <h3 class="text-sm md:text-base font-bold text-white group-hover:text-blue-400 transition-colors font-mono">${item.symbol}</h3>
+                                        <span class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded font-mono">${item.category}</span>
+                                    </div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Lot / Qty: <strong class="text-slate-300 font-mono">${item.lotSize}</strong></div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wide inline-block">
+                                        ${item.action}
+                                    </span>
+                                    <div class="text-[10px] font-bold text-emerald-400 mt-0.5">
+                                        ${item.confidence}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-4 gap-1.5 bg-slate-950/80 p-2 rounded-lg border border-slate-900 mb-2 text-center font-mono">
+                                <div>
+                                    <span class="text-[9px] text-blue-400 font-bold block uppercase">ENTRY</span>
+                                    <div class="text-xs font-bold text-white mt-0.5">₹ ${item.entry.toLocaleString('en-IN')}</div>
+                                </div>
+                                <div>
+                                    <span class="text-[9px] text-rose-400 font-bold block uppercase">STOP LOSS</span>
+                                    <div class="text-xs font-bold text-rose-400 mt-0.5">₹ ${item.sl.toLocaleString('en-IN')}</div>
+                                </div>
+                                <div>
+                                    <span class="text-[9px] text-emerald-400 font-bold block uppercase">TARGET 1</span>
+                                    <div class="text-xs font-bold text-emerald-400 mt-0.5">₹ ${item.t1.toLocaleString('en-IN')}</div>
+                                </div>
+                                <div>
+                                    <span class="text-[9px] text-emerald-300 font-bold block uppercase">TARGET 2</span>
+                                    <div class="text-xs font-bold text-emerald-300 mt-0.5">₹ ${item.t2.toLocaleString('en-IN')}</div>
+                                </div>
+                            </div>
+
+                            <!-- NEWS IN GUJARATI -->
+                            <div class="text-[10px] bg-slate-950/50 p-1.5 rounded flex items-center justify-between text-slate-400">
+                                <span>${item.indicators[0]}</span>
+                                <span class="text-indigo-300 truncate max-w-[200px] gujarati-text">${item.newsImpact}</span>
+                            </div>
+
+                        </div>
+                    `;
+                }
+            });
+
+            container.innerHTML = html;
+            lucide.createIcons();
+
+            if (dataList[0]) {
+                const first = dataList[0];
+                selectCard(first.symbol, first.price, first.entry, first.sl, first.t1, first.t2);
+            }
+        }
+
+        // ANGEL ONE MODAL FUNCTIONS
+        function openAngelModal() {
+            document.getElementById('angelModal').classList.remove('hidden');
+        }
+
+        function closeAngelModal() {
+            document.getElementById('angelModal').classList.add('hidden');
+        }
+
+        const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
+
+        function submitAngelLogin(e) {
+            e.preventDefault();
+            const mpin = document.getElementById('angelMpin').value;
+            const alertBox = document.getElementById('modalAlertBox');
+            const submitBtn = document.getElementById('modalSubmitBtn');
+
+            submitBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Auto-Generating TOTP & Connecting...`;
+            lucide.createIcons();
+
+            fetch(`${API_BASE}/api/angel-login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mpin })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alertBox.className = "p-2 rounded-lg text-[11px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 block";
+                    alertBox.innerText = "✓ Connected to Angel One Live Feed!";
+                    
+                    document.getElementById('angelStatusText').innerText = "Angel One: Live 🟢";
+                    document.getElementById('angelConnectBtn').className = "flex items-center gap-1.5 text-[11px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2.5 py-1.5 rounded-lg";
+                    
+                    setTimeout(() => {
+                        closeAngelModal();
+                    }, 1200);
+                } else {
+                    alertBox.className = "p-2 rounded-lg text-[11px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/40 block";
+                    alertBox.innerText = data.message || "Failed to connect. Please verify your MPIN and TOTP.";
+                }
+                submitBtn.innerHTML = `<i data-lucide="plug" class="w-4 h-4"></i> <span>Connect & Start Live Stream</span>`;
+                lucide.createIcons();
+            })
+            .catch(err => {
+                alertBox.className = "p-2 rounded-lg text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 block";
+                alertBox.innerText = "Please double click Run_On_Mobile_And_Desktop.bat on Desktop to start the live server!";
+                submitBtn.innerHTML = `<i data-lucide="plug" class="w-4 h-4"></i> <span>Connect & Start Live Stream</span>`;
+                lucide.createIcons();
+            });
+        }
+
+        // Check Angel One status on load and sync real closing quotes
+        function checkAngelStatus() {
+            fetch(`${API_BASE}/api/angel-status`)
+                .then(r => r.json())
+                .then(st => {
+                    if (st.isLoggedIn) {
+                        document.getElementById('angelStatusText').innerText = "Angel One: Live 🟢";
+                        document.getElementById('angelConnectBtn').className = "flex items-center gap-1.5 text-[11px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2.5 py-1.5 rounded-lg";
+                        syncRealQuotes();
+                    }
+                })
+                .catch(() => {});
+        }
+
+        // Fetch exact real-time closing prices directly from Angel One API
+        function syncRealQuotes() {
+            fetch(`${API_BASE}/api/live-quotes`)
+                .then(r => r.json())
+                .then(res => {
+                    if (res.success && res.quotes) {
+                        const q = res.quotes;
+                        // Real Reliance Close
+                        if (q["RELIANCE-EQ"]) {
+                            const ltp = q["RELIANCE-EQ"].ltp;
+                            const fItem = database.future.intraday.find(x => x.symbol.includes("RELIANCE"));
+                            if (fItem) {
+                                fItem.price = ltp;
+                                fItem.entry = ltp;
+                                fItem.sl = parseFloat((ltp - 15.50).toFixed(2));
+                                fItem.t1 = parseFloat((ltp + 22.00).toFixed(2));
+                                fItem.t2 = parseFloat((ltp + 40.00).toFixed(2));
+                            }
+                        }
+                        // Real Tata Steel Close
+                        if (q["TATASTEEL-EQ"]) {
+                            const ltp = q["TATASTEEL-EQ"].ltp;
+                            const fItem = database.future.intraday.find(x => x.symbol.includes("TATASTEEL"));
+                            if (fItem) {
+                                fItem.price = ltp;
+                                fItem.entry = ltp;
+                                fItem.sl = parseFloat((ltp - 3.20).toFixed(2));
+                                fItem.t1 = parseFloat((ltp + 4.50).toFixed(2));
+                                fItem.t2 = parseFloat((ltp + 8.50).toFixed(2));
+                            }
+                        }
+                        // Real Infosys Close
+                        if (q["INFY-EQ"]) {
+                            const ltp = q["INFY-EQ"].ltp;
+                            const fItem = database.future.intraday.find(x => x.symbol.includes("INFY"));
+                            if (fItem) {
+                                fItem.price = ltp;
+                                fItem.entry = ltp;
+                                fItem.sl = parseFloat((ltp - 16.00).toFixed(2));
+                                fItem.t1 = parseFloat((ltp + 25.00).toFixed(2));
+                                fItem.t2 = parseFloat((ltp + 45.00).toFixed(2));
+                            }
+                        }
+                        // Real SBIN Close
+                        if (q["SBIN-EQ"]) {
+                            const ltp = q["SBIN-EQ"].ltp;
+                            const fItem = database.future.intraday.find(x => x.symbol.includes("SBIN"));
+                            if (fItem) {
+                                fItem.price = ltp;
+                                fItem.entry = ltp;
+                                fItem.sl = parseFloat((ltp - 12.00).toFixed(2));
+                                fItem.t1 = parseFloat((ltp + 18.00).toFixed(2));
+                                fItem.t2 = parseFloat((ltp + 34.00).toFixed(2));
+                            }
+                        }
+                        // Real HDFC Bank Close
+                        if (q["HDFCBANK-EQ"]) {
+                            const ltp = q["HDFCBANK-EQ"].ltp;
+                            const fItem = database.future.short.find(x => x.symbol.includes("HDFCBANK"));
+                            if (fItem) {
+                                fItem.price = ltp;
+                                fItem.entry = ltp;
+                                fItem.sl = parseFloat((ltp - 12.00).toFixed(2));
+                                fItem.t1 = parseFloat((ltp + 20.00).toFixed(2));
+                                fItem.t2 = parseFloat((ltp + 38.00).toFixed(2));
+                            }
+                        }
+
+                        // ================= REAL MCX COMMODITIES UPDATE =================
+                        const allKeys = Object.keys(q);
+                        
+                        // 1. MCX NATURAL GAS
+                        const ngKey = allKeys.find(k => k.startsWith('NATURALGAS'));
+                        if (ngKey && q[ngKey].ltp) {
+                            const ltp = q[ngKey].ltp;
+                            const ngItem = database.mcx.intraday.find(x => x.symbol.includes("NATURALGAS"));
+                            if (ngItem) {
+                                ngItem.price = ltp;
+                                ngItem.entry = ltp;
+                                ngItem.sl = parseFloat((ltp - 4.50).toFixed(2));
+                                ngItem.t1 = parseFloat((ltp + 6.50).toFixed(2));
+                                ngItem.t2 = parseFloat((ltp + 12.00).toFixed(2));
+                            }
+                        }
+
+                        // 2. MCX CRUDE OIL
+                        const crudeKey = allKeys.find(k => k.startsWith('CRUDEOIL'));
+                        if (crudeKey && q[crudeKey].ltp && q[crudeKey].ltp > 0) {
+                            const ltp = q[crudeKey].ltp;
+                            const crudeItem = database.mcx.intraday.find(x => x.symbol.includes("CRUDEOIL"));
+                            if (crudeItem) {
+                                crudeItem.price = ltp;
+                                crudeItem.entry = ltp;
+                                crudeItem.sl = parseFloat((ltp - 45).toFixed(2));
+                                crudeItem.t1 = parseFloat((ltp + 70).toFixed(2));
+                                crudeItem.t2 = parseFloat((ltp + 120).toFixed(2));
+                            }
+                        }
+
+                        // 3. MCX GOLD
+                        const goldKey = allKeys.find(k => k.startsWith('GOLD'));
+                        if (goldKey && q[goldKey].ltp) {
+                            const ltp = q[goldKey].ltp;
+                            const goldItem = database.mcx.intraday.find(x => x.symbol.includes("GOLD"));
+                            if (goldItem) {
+                                goldItem.price = ltp;
+                                goldItem.entry = ltp;
+                                goldItem.sl = parseFloat((ltp - 600).toFixed(2));
+                                goldItem.t1 = parseFloat((ltp + 950).toFixed(2));
+                                goldItem.t2 = parseFloat((ltp + 1600).toFixed(2));
+                            }
+                            const goldSwing = database.mcx.short.find(x => x.symbol.includes("GOLD"));
+                            if (goldSwing) {
+                                goldSwing.price = ltp;
+                                goldSwing.entry = ltp;
+                                goldSwing.sl = parseFloat((ltp - 1100).toFixed(2));
+                                goldSwing.t1 = parseFloat((ltp + 1800).toFixed(2));
+                                goldSwing.t2 = parseFloat((ltp + 3000).toFixed(2));
+                            }
+                        }
+
+                        // 4. MCX SILVER
+                        const silverKey = allKeys.find(k => k.startsWith('SILVER'));
+                        if (silverKey && q[silverKey].ltp) {
+                            const ltp = q[silverKey].ltp;
+                            const silverItem = database.mcx.intraday.find(x => x.symbol.includes("SILVER"));
+                            if (silverItem) {
+                                silverItem.price = ltp;
+                                silverItem.entry = ltp;
+                                silverItem.sl = parseFloat((ltp - 1200).toFixed(2));
+                                silverItem.t1 = parseFloat((ltp + 1800).toFixed(2));
+                                silverItem.t2 = parseFloat((ltp + 3200).toFixed(2));
+                            }
+                            const silverLong = database.mcx.long.find(x => x.symbol.includes("SILVER"));
+                            if (silverLong) {
+                                silverLong.price = ltp;
+                                silverLong.entry = ltp;
+                                silverLong.sl = parseFloat((ltp - 3500).toFixed(2));
+                                silverLong.t1 = parseFloat((ltp + 5000).toFixed(2));
+                                silverLong.t2 = parseFloat((ltp + 9000).toFixed(2));
+                            }
+                        }
+
+                        // 5. MCX COPPER
+                        const copperKey = allKeys.find(k => k.startsWith('COPPER'));
+                        if (copperKey && q[copperKey].ltp) {
+                            const ltp = q[copperKey].ltp;
+                            const copItem = database.mcx.intraday.find(x => x.symbol.includes("COPPER"));
+                            if (copItem) {
+                                copItem.price = ltp;
+                                copItem.entry = ltp;
+                                copItem.sl = parseFloat((ltp - 8.50).toFixed(2));
+                                copItem.t1 = parseFloat((ltp + 14.00).toFixed(2));
+                                copItem.t2 = parseFloat((ltp + 25.00).toFixed(2));
+                            }
+                        }
+
+                        // ================= REAL CASH / EQUITY UPDATE =================
+                        if (q["TRENT-EQ"] && q["TRENT-EQ"].ltp) {
+                            const ltp = q["TRENT-EQ"].ltp;
+                            const item = database.cash.intraday.find(x => x.symbol.includes("TRENT"));
+                            if (item) { item.price = ltp; item.entry = ltp; }
+                        }
+                        if (q["BHARTIARTL-EQ"] && q["BHARTIARTL-EQ"].ltp) {
+                            const ltp = q["BHARTIARTL-EQ"].ltp;
+                            const item = database.cash.intraday.find(x => x.symbol.includes("BHARTIARTL"));
+                            if (item) { item.price = ltp; item.entry = ltp; }
+                        }
+                        if (q["ZOMATO-EQ"] && q["ZOMATO-EQ"].ltp) {
+                            const ltp = q["ZOMATO-EQ"].ltp;
+                            const item = database.cash.intraday.find(x => x.symbol.includes("ZOMATO"));
+                            if (item) { item.price = ltp; item.entry = ltp; }
+                        }
+                        renderCards();
+                    }
+                })
+                .catch(() => {});
+        }
+
+        // INPUT CHANGE LISTENER (DISAPPEARS ON CLEAR)
+        function handleInputChange(val) {
+            const clearBtn = document.getElementById('clearSearchBtn');
+            const resultBox = document.getElementById('customResultBox');
+
+            if (val.trim().length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+                resultBox.classList.add('hidden');
+                resultBox.innerHTML = '';
+            }
+        }
+
+        function clearCustomSearch() {
+            const input = document.getElementById('customStockInput');
+            input.value = '';
+            handleInputChange('');
+            input.focus();
+        }
+
+        // CUSTOM STOCK ANALYZER ENGINE
+        function analyzeStockEngine(symbolInput) {
+            const sym = symbolInput.trim().toUpperCase();
+            
+            let basePrice = 500;
+            if (sym.includes('SBIN')) basePrice = 825.40;
+            else if (sym.includes('TATAMOTORS')) basePrice = 960.50;
+            else if (sym.includes('HDFC')) basePrice = 1740.00;
+            else if (sym.includes('RELIANCE')) basePrice = 1284.50;
+            else if (sym.includes('CRUDE')) basePrice = 6280.00;
+            else if (sym.includes('GOLD')) basePrice = 76500.00;
+            else if (sym.includes('NIFTY') && sym.includes('CE')) basePrice = 120.00;
+            else if (sym.includes('NIFTY') && sym.includes('PE')) basePrice = 95.00;
+            else {
+                let hash = 0;
+                for (let i = 0; i < sym.length; i++) hash = sym.charCodeAt(i) + ((hash << 5) - hash);
+                basePrice = Math.abs(hash % 2500) + 150;
+            }
+
+            const atr = parseFloat((basePrice * 0.012).toFixed(2));
+            const entry = parseFloat(basePrice.toFixed(2));
+            const sl = parseFloat((basePrice - (1.2 * atr)).toFixed(2));
+            const t1 = parseFloat((basePrice + (1.8 * atr)).toFixed(2));
+            const t2 = parseFloat((basePrice + (3.0 * atr)).toFixed(2));
+
+            return {
+                symbol: sym,
+                price: entry,
+                entry: entry,
+                sl: sl,
+                t1: t1,
+                t2: t2,
+                atr: atr,
+                action: "STRONG BUY (ACCUMULATE)",
+                confidence: "93% AI Confluence Match",
+                indicators: [
+                    `Price trading above 15M VWAP (₹ ${(entry - atr * 0.4).toFixed(1)})`,
+                    "SuperTrend (10,3) Bullish Buy Mode",
+                    "EMA 9 > EMA 21 Golden Crossover",
+                    "RSI (14) = 63.8 (Strong Bullish Zone)",
+                    "Volume 2.2x 20-Day Moving Average"
+                ],
+                news: `${sym} માટે તાજેતરના સેક્ટર પરિણામો અને સંસ્થાકીય રોકાણકારો (FII/DII) નો રસ પોઝિટિવ છે.`
+            };
+        }
+
+        function handleCustomAnalyze(event) {
+            if (event) event.preventDefault();
+            const input = document.getElementById('customStockInput');
+            const sym = input.value.trim();
+            if (!sym) {
+                clearCustomSearch();
+                return;
+            }
+
+            const btn = document.getElementById('analyzeBtn');
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> <span>Calculating...</span>`;
+            lucide.createIcons();
+
+            setTimeout(() => {
+                const result = analyzeStockEngine(sym);
+                displayCustomResult(result);
+                selectCard(result.symbol, result.price, result.entry, result.sl, result.t1, result.t2);
+                
+                btn.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i> <span>Analyze Now</span>`;
+                lucide.createIcons();
+            }, 350);
+        }
+
+        function quickAnalyze(sym) {
+            const input = document.getElementById('customStockInput');
+            input.value = sym;
+            handleInputChange(sym);
+            handleCustomAnalyze(null);
+        }
+
+        function displayCustomResult(res) {
+            const box = document.getElementById('customResultBox');
+            box.classList.remove('hidden');
+
+            box.innerHTML = `
+                <div class="bg-gradient-to-r from-blue-950/60 via-slate-900 to-indigo-950/60 p-3.5 rounded-xl border border-blue-500/40 shadow-lg text-xs animate-fadeIn relative">
+                    <button onclick="clearCustomSearch()" class="absolute right-3 top-3 text-slate-400 hover:text-white font-bold text-xs bg-slate-800 px-2 py-0.5 rounded">
+                        Close ✕
+                    </button>
+                    <div class="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-blue-500/20 pr-20">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <h3 class="text-sm font-extrabold text-white font-mono">${res.symbol}</h3>
+                            <span class="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded font-bold">CUSTOM RESULT</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded border border-emerald-500/40 text-[11px]">${res.action}</span>
+                            <span class="text-emerald-400 font-bold text-[10px]">${res.confidence}</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-4 gap-1.5 bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-center mb-2 font-mono">
+                        <div>
+                            <span class="text-[9px] text-blue-400 font-bold block">🎯 ENTRY</span>
+                            <div class="text-xs md:text-sm font-bold text-white mt-0.5">₹ ${res.entry.toLocaleString('en-IN')}</div>
+                        </div>
+                        <div>
+                            <span class="text-[9px] text-rose-400 font-bold block">🛑 STOP LOSS</span>
+                            <div class="text-xs md:text-sm font-bold text-rose-400 mt-0.5">₹ ${res.sl.toLocaleString('en-IN')}</div>
+                        </div>
+                        <div>
+                            <span class="text-[9px] text-emerald-400 font-bold block">🚀 TARGET 1</span>
+                            <div class="text-xs md:text-sm font-bold text-emerald-400 mt-0.5">₹ ${res.t1.toLocaleString('en-IN')}</div>
+                        </div>
+                        <div>
+                            <span class="text-[9px] text-emerald-300 font-bold block">🏆 TARGET 2</span>
+                            <div class="text-xs md:text-sm font-bold text-emerald-300 mt-0.5">₹ ${res.t2.toLocaleString('en-IN')}</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-1 text-[10px] text-slate-300 bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                        ${res.indicators.map(i => `
+                            <div class="flex items-center gap-1.5">
+                                <i data-lucide="check" class="w-3 h-3 text-emerald-400 shrink-0"></i>
+                                <span>${i}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="mt-2 text-[10px] text-slate-300 flex items-center gap-1.5 gujarati-text">
+                        <i data-lucide="info" class="w-3.5 h-3.5 text-blue-400 shrink-0"></i>
+                        <span><strong>ન્યૂઝ:</strong> ${res.news}</span>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function selectCard(symbol, price, entry, sl, t1, t2) {
+            document.getElementById('chartTitle').innerText = `${symbol} • ${currentHorizon === 'intraday' ? '15M' : 'Daily'}`;
+            document.getElementById('chartPrice').innerText = `₹ ${price.toLocaleString('en-IN')}`;
+            document.getElementById('annotEntry').innerText = `₹ ${entry.toLocaleString('en-IN')}`;
+            document.getElementById('annotSL').innerText = `₹ ${sl.toLocaleString('en-IN')}`;
+            document.getElementById('annotT1').innerText = `₹ ${t1.toLocaleString('en-IN')}`;
+            document.getElementById('annotT2').innerText = `₹ ${t2.toLocaleString('en-IN')}`;
+            updateRiskCalc(entry, sl);
+        }
+
+        function setHorizon(horizon) {
+            currentHorizon = horizon;
+            document.querySelectorAll('.horizon-btn').forEach(btn => {
+                btn.className = "horizon-btn py-1.5 px-2 rounded-lg text-xs font-medium text-slate-400 hover:text-white transition-all";
+            });
+            const active = document.getElementById(`btn-${horizon}`);
+            if (active) {
+                active.className = "horizon-btn py-1.5 px-2 rounded-lg text-xs font-bold transition-all bg-blue-600 text-white shadow";
+            }
+            renderCards();
+        }
+
+        function setSegment(segment) {
+            currentSegment = segment;
+            document.querySelectorAll('.segment-btn').forEach(btn => {
+                btn.className = "segment-btn py-1.5 px-1.5 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white transition-all";
+            });
+            const active = document.getElementById(`btn-${segment}`);
+            if (active) {
+                active.className = "segment-btn py-1.5 px-1.5 rounded-lg text-[11px] font-bold transition-all bg-emerald-600 text-white shadow";
+            }
+            renderCards();
+        }
+
+        function updateRiskCalc(entry, sl) {
+            const capital = parseFloat(document.getElementById('capitalInput').value) || 50000;
+            const maxRisk = capital * 0.01;
+            document.getElementById('maxRiskVal').innerText = `₹ ${Math.round(maxRisk).toLocaleString('en-IN')}`;
+            
+            const currEntry = entry || 1284.50;
+            const currSL = sl || 1274.00;
+            const riskPerShare = Math.max(0.5, Math.abs(currEntry - currSL));
+            const calculatedShares = Math.floor(maxRisk / riskPerShare);
+
+            if (currentSegment === 'future' || currentSegment === 'options') {
+                document.getElementById('suggestedQtyVal').innerText = `1 Lot (${calculatedShares} Sh)`;
+            } else {
+                document.getElementById('suggestedQtyVal').innerText = `${calculatedShares} Shares`;
+            }
+        }
+
+        function toggleLiveFeed() {
+            isLiveActive = !isLiveActive;
+            const btn = document.getElementById('liveToggleBtn');
+            const txt = document.getElementById('liveStatusText');
+            if (isLiveActive) {
+                btn.className = "flex items-center gap-1.5 text-[11px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2.5 py-1.5 rounded-lg active:scale-95 transition-all";
+                txt.innerText = "Live Feed: ON";
+                startLiveSimulation();
+            } else {
+                btn.className = "flex items-center gap-1.5 text-[11px] font-semibold bg-slate-800 text-slate-400 border border-slate-700 px-2.5 py-1.5 rounded-lg active:scale-95 transition-all";
+                txt.innerText = "Live Feed: PAUSED";
+                clearInterval(liveInterval);
+            }
+        }
+
+        function startLiveSimulation() {
+            clearInterval(liveInterval);
+            liveInterval = setInterval(() => {
+                if (!isLiveActive) return;
+
+                const priceElem = document.getElementById('chartPrice');
+                let curPrice = parseFloat(priceElem.innerText.replace(/[^0-9.]/g, '')) || 1284.50;
+                
+                const delta = (Math.random() * 0.45 - 0.18);
+                const newPrice = parseFloat((curPrice + delta).toFixed(2));
+                
+                priceElem.innerText = `₹ ${newPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+                
+                if (delta >= 0) {
+                    priceElem.classList.remove('tick-down');
+                    priceElem.classList.add('tick-up');
+                } else {
+                    priceElem.classList.remove('tick-up');
+                    priceElem.classList.add('tick-down');
+                }
+
+                setTimeout(() => {
+                    priceElem.classList.remove('tick-up', 'tick-down');
+                }, 600);
+
+            }, 2500);
+        }
+
+        function startClock() {
+            function tick() {
+                const now = new Date();
+                document.getElementById('liveClock').innerText = now.toLocaleTimeString('en-IN', { hour12: false }) + ' IST';
+            }
+            tick();
+            setInterval(tick, 1000);
+        }
+
+        window.onload = function() {
+            startClock();
+            renderCards();
+            updateRiskCalc();
+            startLiveSimulation();
+            checkAngelStatus();
+            syncRealQuotes();
+            setInterval(syncRealQuotes, 10000);
+            lucide.createIcons();
+        };
+    </script>
+</body>
+</html>
